@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Les 42 symboles : retourne pour le nom</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff8ee;--ink:#2b2340;--card:#fff;--line:#2b2340;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1830;--ink:#fff3e0;--card:#2a2345;--line:#fff3e0}}
+:root[data-theme="dark"]{--bg:#1d1830;--ink:#fff3e0;--card:#2a2345;--line:#fff3e0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Fredoka,"Trebuchet MS",sans-serif;line-height:1.4}
+main{max-width:980px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:clamp(1.8rem,6vw,3rem);margin:.2em 0 .1em;font-weight:700}
+.sub{margin:0 0 18px;opacity:.8}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chip{border:2.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:.9rem;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--c,#ffd23f);color:#2b2340;font-weight:600;box-shadow:3px 3px 0 var(--line)}
+.chip:focus-visible,.card:focus-visible,input:focus-visible,.opt:focus-visible{outline:3px solid #7b5cff;outline-offset:2px}
+input[type=search]{width:100%;border:2.5px solid var(--line);border-radius:14px;padding:10px 14px;font:inherit;background:var(--card);color:var(--ink);margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:12px}
+.card{perspective:700px;border:0;background:none;padding:0;cursor:pointer;height:128px;font:inherit;color:#2b2340}
+.in{position:relative;width:100%;height:100%;transition:transform .45s;transform-style:preserve-3d}
+.card.flip .in{transform:rotateY(180deg)}
+.f,.b{position:absolute;inset:0;backface-visibility:hidden;border:2.5px solid var(--line);border-radius:16px;background:var(--c);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;box-shadow:4px 4px 0 var(--line)}
+.b{transform:rotateY(180deg);text-align:center;line-height:1.15}.b .nm{font-size:1.3rem;font-weight:700}.b .fm{font-size:.78rem;margin-top:6px}
+.z{position:absolute;top:6px;left:10px;font-size:.75rem;opacity:.7}
+.s{font-size:2.9rem;font-weight:700;line-height:1}
+.n{font-size:1.1rem;font-weight:600;margin-top:4px;text-align:center;line-height:1.1}
+.odd{position:absolute;top:5px;right:8px;font-size:.9rem}
+.hide{display:none}
+.note{margin:18px 0;padding:12px 16px;border:2.5px dashed var(--line);border-radius:14px;background:var(--card)}
+.quiz{margin-top:28px;padding:18px;border:2.5px solid var(--line);border-radius:20px;background:var(--card);box-shadow:5px 5px 0 var(--line)}
+.q{font-size:1.5rem;font-weight:600;margin:6px 0 12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{border:2.5px solid var(--line);border-radius:12px;padding:10px;background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
+.opt.ok{background:#7bd88f;color:#12351b}.opt.ko{background:#ff8a8a;color:#4a0f0f}
+.btn{margin-top:12px;border:2.5px solid var(--line);border-radius:999px;background:#ffd23f;color:#2b2340;padding:8px 18px;font:inherit;font-weight:600;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.in{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<h1>Les 42 symboles à deviner</h1>
+<p class="sub">Devine le nom de l'élément, puis touche la carte pour vérifier. Filtre par famille, cherche un symbole, puis teste-toi.</p>
+<div class="note">🕵️ Le petit <b>★</b> signale les symboles qui viennent du latin ou de l'allemand : ils ne ressemblent pas au nom français !</div>
+<input type="search" id="q" placeholder="Chercher un symbole ou un nom…" aria-label="Chercher">
+<div class="bar" id="bar"></div>
+<div class="grid" id="grid"></div>
+
+<section class="quiz" aria-live="polite">
+<b>🎯 Mini-quiz</b> <span id="score">Score : 0</span>
+<div class="q" id="qq"></div>
+<div class="opts" id="opts"></div>
+<button class="btn" id="next">Question suivante</button>
+</section>
+</main>
+<script>
+const F={alc:["Métaux alcalins","#ff9f68"],ter:["Alcalino-terreux","#ffc94d"],tra:["Métaux de transition","#7cc4ff"],pau:["Autres métaux","#b9a5ff"],mtl:["Métalloïdes","#7ee0c3"],non:["Non-métaux","#a6e36f"],hal:["Halogènes","#ff8fc2"],nob:["Gaz nobles","#e2a8ff"],act:["Actinide","#ff7a7a"]};
+// [symbole, nom, Z, famille, origine, anecdote]
+const E=[
+["H","Hydrogène",1,"non","","Le plus léger de tous, il forme l'eau avec l'oxygène."],
+["He","Hélium",2,"nob","","Fait voler les ballons et rend la voix aiguë."],
+["Li","Lithium",3,"alc","","Métal si léger qu'il flotte sur l'eau. Dans les batteries."],
+["Be","Béryllium",4,"ter","","Entre dans la composition de l'émeraude."],
+["B","Bore",5,"mtl","","Présent dans le verre résistant à la chaleur."],
+["C","Carbone",6,"non","","Base de la vie, du diamant et du crayon."],
+["N","Azote",7,"non","","Compose environ 78 % de l'air."],
+["O","Oxygène",8,"non","","Indispensable pour respirer."],
+["F","Fluor",9,"hal","","Protège l'émail des dents."],
+["Ne","Néon",10,"nob","","Donne sa lumière rouge-orangé aux enseignes."],
+["Na","Sodium",11,"alc","Natrium","Avec le chlore, il donne le sel de cuisine."],
+["Mg","Magnésium",12,"ter","","Brûle d'une lumière blanche éblouissante."],
+["Al","Aluminium",13,"pau","","Léger, il habille les canettes et les avions."],
+["Si","Silicium",14,"mtl","","Le cœur des puces électroniques."],
+["P","Phosphore",15,"non","","Présent dans les allumettes et dans les os."],
+["S","Soufre",16,"non","","Jaune vif, il sent les œufs pourris en composés."],
+["Cl","Chlore",17,"hal","","Désinfecte l'eau des piscines."],
+["Ar","Argon",18,"nob","","Gaz inerte qui remplit les ampoules."],
+["K","Potassium",19,"alc","Kalium","Abondant dans les bananes."],
+["Ca","Calcium",20,"ter","","Construit les os, les dents et les coquilles."],
+["Cr","Chrome",24,"tra","","Donne leur éclat aux pare-chocs d'antan."],
+["Mn","Manganèse",25,"tra","","Renforce l'acier."],
+["Fe","Fer",26,"tra","Ferrum","Le métal le plus utilisé au monde sous forme d'acier."],
+["Co","Cobalt",27,"tra","","Colore le verre en bleu intense."],
+["Ni","Nickel",28,"tra","","Sert dans les pièces de monnaie."],
+["Cu","Cuivre",29,"tra","Cuprum","Excellent conducteur d'électricité."],
+["Zn","Zinc",30,"tra","","Protège l'acier de la rouille (galvanisation)."],
+["As","Arsenic",33,"mtl","","Poison célèbre des romans policiers."],
+["Br","Brome",35,"hal","","L'un des deux éléments liquides à température ambiante."],
+["Kr","Krypton",36,"nob","","Son nom vient du grec « caché »."],
+["Ag","Argent",47,"tra","Argentum","Meilleur conducteur électrique de tous les métaux."],
+["Sn","Étain",50,"pau","Stannum","Utilisé pour souder et pour les boîtes de conserve."],
+["Sb","Antimoine",51,"mtl","Stibium","Utilisé dans les alliages d'imprimerie."],
+["I","Iode",53,"hal","","Sa vapeur est violette. Utile pour la thyroïde."],
+["Ba","Baryum",56,"ter","","Colore les feux d'artifice en vert."],
+["W","Tungstène",74,"tra","Wolfram","Le métal au point de fusion le plus élevé."],
+["Pt","Platine",78,"tra","","Plus rare que l'or, précieux en bijouterie."],
+["Au","Or",79,"tra","Aurum","Inaltérable, il ne rouille jamais."],
+["Hg","Mercure",80,"tra","Hydrargyrum","Le seul métal liquide à température ambiante."],
+["Pb","Plomb",82,"pau","Plumbum","Très dense, autrefois dans les canalisations."],
+["Ra","Radium",88,"ter","","Radioactif. Il brillait dans le noir sur les anciens cadrans."],
+["U","Uranium",92,"act","","Combustible des centrales nucléaires."]
+];
+const bar=document.getElementById("bar"),grid=document.getElementById("grid"),q=document.getElementById("q");
+let fam="all";
+function chip(k,label,c){const b=document.createElement("button");b.className="chip";b.textContent=label;b.style.setProperty("--c",c);b.setAttribute("aria-pressed",k===fam);b.onclick=()=>{fam=k;[...bar.children].forEach(x=>x.setAttribute("aria-pressed",x===b));render()};bar.appendChild(b)}
+chip("all","Tous","#ffd23f");for(const k in F)chip(k,F[k][0],F[k][1]);
+E.forEach(e=>{const d=document.createElement("button");d.className="card";d.style.setProperty("--c",F[e[3]][1]);d.dataset.f=e[3];d.dataset.t=(e[0]+" "+e[1]).toLowerCase();
+d.setAttribute("aria-label","Symbole "+e[0]+" : touche pour voir le nom");
+d.innerHTML=`<div class="in"><div class="f"><span class="z">${e[2]}</span>${e[4]?'<span class="odd" title="'+e[4]+'">★</span>':""}<span class="s">${e[0]}</span></div><div class="b"><div><div class="nm">${e[1]}</div><div class="fm">${F[e[3]][0]}${e[4]?"<br>« "+e[4]+" »":""}</div></div></div></div>`;
+d.onclick=()=>d.classList.toggle("flip");grid.appendChild(d)});
+function render(){const t=q.value.trim().toLowerCase();[...grid.children].forEach(c=>c.classList.toggle("hide",!((fam==="all"||c.dataset.f===fam)&&c.dataset.t.includes(t))))}
+q.oninput=render;
+// Quiz
+let sc=0,n=0,cur,locked=false;
+const qq=document.getElementById("qq"),opts=document.getElementById("opts");
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+function ask(){locked=false;cur=rnd(E);const sym=Math.random()<.5;
+const pool=[cur];while(pool.length<4){const x=rnd(E);if(!pool.includes(x))pool.push(x)}
+pool.sort(()=>Math.random()-.5);
+qq.textContent=sym?`Quel est le symbole de : ${cur[1]} ?`:`Quel élément a pour symbole « ${cur[0]} » ?`;
+opts.innerHTML="";pool.forEach(x=>{const b=document.createElement("button");b.className="opt";b.textContent=sym?x[0]:x[1];
+b.onclick=()=>{if(locked)return;locked=true;n++;if(x===cur){sc++;b.classList.add("ok")}else{b.classList.add("ko");[...opts.children].forEach(o=>{if(o.textContent===(sym?cur[0]:cur[1]))o.classList.add("ok")})}
+document.getElementById("score").textContent=`Score : ${sc}/${n}`};opts.appendChild(b)})}
+document.getElementById("next").onclick=ask;ask();
+</script>
+</body>
+</html>
